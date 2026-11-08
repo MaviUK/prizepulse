@@ -4,7 +4,7 @@ Independent mobile-first prize draw price monitor for [thatprizeguy.co.uk](https
 
 ## Current status
 
-**Deployed to Netlify with a scheduled monitor every 30 minutes.** The public dashboard no longer falls back to example prices. A collection is labelled live only after the source robots policy is checked and actual competitions are parsed. A first visit can trigger one initial check per 30-minute slot. If access is denied, collection halts and retains the last verified snapshot. Upstream source access remains to be verified from deployment logs and the API.
+**Deployed to Netlify with a scheduled monitor every minute.** The public dashboard no longer falls back to example prices. A collection is labelled live only after the source robots policy is checked and actual competitions are parsed. A first visit can trigger one initial check per 30-minute slot. If access is denied, collection halts and retains the last verified snapshot. Upstream source access remains to be verified from deployment logs and the API.
 
 ## Features
 
@@ -30,7 +30,7 @@ Use any static HTTP server pointed at `public/`. The Netlify build runs `npm run
 3. Let Netlify install the pinned Node dependencies and run the configured `npm run build`; commit a generated `package-lock.json` when the repository is created.
 4. In Netlify, inspect scheduled function `monitor` logs, the `prizepulse-public-v1` blob store and the `/api/competitions` response. The function checks the operator's public robots policy before crawling; if it is inaccessible or disallowed, the monitor stops without overwriting historical data. Do not try to evade rate limits, anti-bot protections, or the operator's terms.
 5. Validate the parser against **actual** source HTML. The first live update should only be marked successful after valid prices / URLs / caps are verified against the operator site.
-6. Data collection is 30-minute interval, not continuous. A fresh price could change before the next check.
+6. Data collection is once per minute when source access is permitted (blocked requests remain paused), not continuous. A fresh price could change before the next check.
 
 > The app uses Netlify Blobs rather than creating an unapproved Supabase project; the public monitoring history is a cache-like record with a single scheduled writer. Per-user watchlists remain local. Move to Supabase/Netlify DB for registered users, push subscriptions, audit/event history or transactional alerts.
 

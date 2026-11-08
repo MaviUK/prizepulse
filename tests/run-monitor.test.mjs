@@ -33,3 +33,20 @@ test('once blocked, a scheduled check does not retry without explicit approval',
  const result=await runMonitor(store,{now:'2026-11-08T22:42:00Z',fetcher:async()=>{throw new Error('Should never fetch blocked source');}});
  assert.equal(result.blocked,true);assert.equal(result.paused,true);
 });
+
+
+test('robots HTTP 403 pauses subsequent minute polls without further upstream requests',async()=>{
+ const store=memoryStore();
+ const first=await runMonitor(store,{now:'2026-11-08T22:50:00Z',fetcher:async()=>new Response('Forbidden',{status:403})});
+ assert.equal(first.ok,false);
+ assert.equal((await store.get('sync-status')).blocked,true);
+ const second=await runMonitor(store,{now:'2026-11-08T22:51:00Z',fetcher:async()=>{throw new Error('Upstream request should remain paused');}});
+ assert.equal(second.paused,true);
+ assert.equal(second.blocked,true);
+});
+
+test('legacy recorded robots policy rejection is treated as blocked on a minute poll',async()=>{
+ const store=memoryStore({'sync-status':{status:'error',at:'2026-11-08T22:50:00Z',reason:'The source access policy could not be verified or does not allow monitoring.',blocked:false}});
+ const result=await runMonitor(store,{now:'2026-11-08T22:51:00Z',fetcher:async()=>{throw new Error('Upstream request should remain paused');}});
+ assert.equal(result.paused,true);
+});

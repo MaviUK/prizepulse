@@ -13,7 +13,7 @@ export default async function competitions(req,context) {
     const store=getStore({name:cacheName,consistency:'strong'});
     const [latest,status]=await Promise.all([store.get('latest',{type:'json'}),store.get('sync-status',{type:'json'})]);
     if(!latest || !Array.isArray(latest.items) || latest.items.length<2) {
-      const sourceBlocked=Boolean(status?.blocked)||(status?.status==='error'&&/source website refused or limited/i.test(status.reason||''));
+      const sourceBlocked=Boolean(status?.blocked)||(status?.status==='error'&&/source website refused or limited|source access policy could not be verified/i.test(status.reason||''));
       // The first browser visit may bootstrap once per slot, always obeying robots.txt.
       let started=false;
       if(!sourceBlocked && typeof context?.waitUntil==='function') {
@@ -31,8 +31,8 @@ export default async function competitions(req,context) {
         monitorWarning:status?.status==='error'?status.reason:'Waiting for the first verified public-source check.'},{headers});
     }
     const failed=status?.status==='error'&&Date.parse(status.at)>Date.parse(latest.checkedAt);
-    const stale=!(Date.parse(latest.checkedAt)>0)||Date.now()-Date.parse(latest.checkedAt)>90*60*1000;
-    const warning=failed?status.reason+' Showing the previous verified snapshot.':stale?'The last verified snapshot is over 90 minutes old. Prices may have changed.':null;
+    const stale=!(Date.parse(latest.checkedAt)>0)||Date.now()-Date.parse(latest.checkedAt)>3*60*1000;
+    const warning=failed?status.reason+' Showing the previous verified snapshot.':stale?'The last verified snapshot is over 3 minutes old. Prices may have changed.':null;
     return Response.json({...latest,status:stale?'stale':'live',monitorWarning:warning,lastAttemptAt:status?.at||latest.checkedAt},{headers});
   } catch(error) {
     console.error('PrizePulse snapshot API failed',String(error));

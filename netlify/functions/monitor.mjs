@@ -6,4 +6,4 @@ export default async function monitor() {
   const result=await runMonitor(store);
   return Response.json(result,{status:result.ok?200:503,headers:{'Cache-Control':'no-store'}});
 }
-export const config={schedule:'*/30 * * * *'};
+export const config={schedule:'* * * * *'};
