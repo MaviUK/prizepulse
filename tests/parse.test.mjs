@@ -56,3 +56,7 @@ test('scheduled collector detects an independently observed change and retains h
   assert.equal(cruise.history.length,2);
   assert.ok(requests.some(x=>x.endsWith('/robots.txt')));
 });
+test('robots-check fails closed on an HTML challenge page',async()=>{
+  const blocked=async url=>new Response('<!DOCTYPE html><html><body>Restricted</body></html>',{status:200,headers:{'content-type':'text/html'}});
+  await assert.rejects(collect('2026-11-08T22:45:00Z',blocked,[]),/Robots policy returned an unexpected HTML page/);
+});
