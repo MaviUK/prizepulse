@@ -37,10 +37,10 @@ function renderStats(){
  $('statRanked').textContent=fmtNum(items.filter(x=>getValueMetrics(x)).length);
  updateWatchStats();
  $('lastChecked').textContent=checkedAt ? `Last checked: ${fmtDate(checkedAt)}` : 'No recent check';
- const status=$('dataStatus');status.className=`data-status ${sourceMode==='live'?'live':'demo'}`;
- const name=sourceMode==='live'?'LIVE PUBLIC SNAPSHOT':sourceMode==='import'?'LOCAL IMPORT':sourceMode==='loading'?'CHECKING SOURCE':'PREVIEW DATA ONLY';
+ const status=$('dataStatus');status.className='data-status '+(sourceMode==='live'?'live':'demo');
+ const name=sourceMode==='live'?'LIVE PUBLIC SNAPSHOT':sourceMode==='stale'?'VERIFIED DATA - STALE':sourceMode==='import'?'LOCAL IMPORT':sourceMode==='loading'?'CHECKING SOURCE':sourceMode==='pending'?'AWAITING LIVE CHECK':'MONITOR UNAVAILABLE';
  status.querySelector('span:last-child').textContent=name;
- $('sampleNotice').hidden=sourceMode!=='sample'||sampleNoticeDismissed;
+ $('sampleNotice').hidden=true;
 }
 function valueMarkup(item){const value=getValueMetrics(item);if(!value)return `<div class="unranked">${item.instantWin?'Separate mechanics':'Insufficient data'}</div><div class="value-sub">Not ranked</div>`;
  return `<div class="value-amount">${value.valuePercent.toFixed(1)}% <span>gross ratio</span></div><div class="value-sub">At max ticket allocation</div>`;
@@ -82,7 +82,7 @@ function render(){renderStats();
  document.querySelectorAll('[data-screen]').forEach(btn=>btn.classList.toggle('active',btn.dataset.screen===screen));
  document.querySelectorAll('[data-category]').forEach(btn=>btn.classList.toggle('active',btn.dataset.category===category));
  const list=getVisibleItems();$('shownCount').textContent=list.length;$('footCounter').textContent=`${list.length} / ${items.length} competitions`;
- $('listDescription').textContent=`${sourceMode==='live'?'Public feed':sourceMode==='import'?'Local file':'Sample dataset'} · ${list.length} matching listings`;
+ $('listDescription').textContent=(sourceMode==='live'?'Verified public feed':sourceMode==='stale'?'Last verified feed (stale)':sourceMode==='import'?'Local file':'No verified live snapshot')+' · '+list.length+' matching listings';
  $('prizeList').innerHTML=list.length?list.map(cardMarkup).join(''):`<div class="empty-state"><strong>${screen==='watching'?'Your watchlist is empty':screen==='value'?'No comparable prizes in this selection':'No competitions found'}</strong><p>${screen==='watching'?'Tap ☆ on a prize to start watching its price.':screen==='value'?'Cash prize and maximum tickets must both be known. Try another category.':'Try a different search or filter.'}</p></div>`;
 }
 function setScreen(next){if(!LABELS[next])return;screen=next;category='All';search='';$('searchInput').value='';if(next==='value'){$('sortSelect').value='value';sort='value';}else if(next==='drops'){$('sortSelect').value='drops';sort='drops';}render();$('competitions').scrollIntoView({behavior:'smooth',block:'start'});}
@@ -113,23 +113,32 @@ function closeOverlay(type){if(type==='detail'){$('detailOverlay').hidden=true;a
 function openMethod(){$('methodOverlay').hidden=false;document.body.style.overflow='hidden';$('closeMethod').focus();}
 function checkWatchedPrices(){let n=0;for(const item of items){const saved=watches[item.id];if(saved&&Number.isInteger(saved.pricePence)&&item.pricePence<saved.pricePence)n++;}if(n)toast(`${n} watched prize${n>1?'s are':' is'} below your saved price.`);}
 async function refreshData(showToast=false){
+ if($('refreshButton').disabled)return;
  $('refreshButton').disabled=true;
  try{
   const response=await fetch('/api/competitions',{cache:'no-store',headers:{Accept:'application/json'}});
-  if(!response.ok)throw new Error(`API returned ${response.status}`);
+  if(!response.ok)throw new Error('Live monitor API returned '+response.status);
   const data=await response.json();
-  if(data.status!=='live'||!Array.isArray(data.items)||!data.items.length)throw new Error('Monitor has not collected a live snapshot yet');
-  const next=data.items.map(normalizeItem).filter(Boolean);
-  if(!next.length)throw new Error('No valid live records');
-  items=next;checkedAt=data.checkedAt;sourceMode='live';
-  $('monitorWarning').hidden=!data.monitorWarning;
-  if(data.monitorWarning)$('monitorWarningText').textContent=data.monitorWarning;
-  if(showToast)toast(`Updated ${items.length} competitions from the monitor.`);
+  if((data.status==='live'||data.status==='stale')&&Array.isArray(data.items)&&data.items.length){
+    const next=data.items.map(normalizeItem).filter(Boolean);
+    if(!next.length)throw new Error('No verified live records');
+    items=next;checkedAt=data.checkedAt;sourceMode=data.status;
+    $('monitorWarning').hidden=!data.monitorWarning;
+    if(data.monitorWarning)$('monitorWarningText').textContent=data.monitorWarning;
+    if(showToast)toast('Loaded '+items.length+' verified competitions.');
+  }else if(data.status==='uninitialised'){
+    items=[];checkedAt=null;sourceMode='pending';
+    $('monitorWarning').hidden=false;
+    $('monitorWarningText').textContent=data.monitorWarning||'Awaiting the first verified source check.';
+    if(showToast)toast(data.bootstrapStarted?'Starting first source check.':'No verified prices available yet.');
+  }else throw new Error(data.monitorWarning||'Live source is unavailable');
  }catch(err){
-  if(!initialised){
-   try{const resp=await fetch('/samples/official-snapshot.json');const data=await resp.json();items=data.items.map(normalizeItem).filter(Boolean);checkedAt=data.checkedAt;sourceMode='sample';}
-   catch{items=[];sourceMode='sample';checkedAt=null;}
-  }else if(showToast){toast(sourceMode==='live'?'Live feed temporarily unavailable; keeping previous prices.':'No live monitor configured yet. Showing preview data.');}
+   if(sourceMode!=='live'&&sourceMode!=='stale'&&sourceMode!=='import'){
+     items=[];checkedAt=null;sourceMode='unavailable';
+   }
+   $('monitorWarning').hidden=false;
+   $('monitorWarningText').textContent=sourceMode==='live'||sourceMode==='stale'?'Live feed temporarily unavailable. Displaying the last verified prices.':'Unable to load verified prices: '+err.message;
+   if(showToast)toast('The source cannot be verified right now. No example prices are being shown as live.');
  }
  initialised=true;render();checkWatchedPrices();$('refreshButton').disabled=false;
 }
@@ -166,3 +175,5 @@ document.addEventListener('click',event=>{const button=event.target.closest('[da
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeOverlay('detail');closeOverlay('method');}if(event.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){event.preventDefault();$('searchInput').focus();}});
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('/sw.js').catch(()=>{});
 refreshData();
+// Server collection occurs every 30 minutes; the browser refreshes snapshots only.
+setInterval(()=>{if(document.visibilityState==='visible'&&sourceMode!=='import')refreshData();},60000);

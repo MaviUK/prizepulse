@@ -4,7 +4,7 @@ Independent mobile-first prize draw price monitor for [thatprizeguy.co.uk](https
 
 ## Current status
 
-**Built and locally testable; not deployed or collecting automatically yet.** The default browser preview uses a clearly labelled public-information sample assembled from 8 November 2026. Snapshot dates, sold percentages, and current prices in the sample are historical examples and were not necessarily captured simultaneously. The production monitor is designed to poll once every 30 minutes after Netlify deploy, subject to permitted public access and successful source parsing. The parser has unit tests but **has not been validated against the operator's raw live HTML** because the build environment could not reach the domain. Nothing should be described as live until its first successful Netlify run.
+**Deployed to Netlify with a scheduled monitor every 30 minutes.** The public dashboard no longer falls back to example prices. A collection is labelled live only after the source robots policy is checked and actual competitions are parsed. A first visit can trigger one initial check per 30-minute slot. If access is denied, collection halts and retains the last verified snapshot. Upstream source access remains to be verified from deployment logs and the API.
 
 ## Features
 
@@ -14,12 +14,14 @@ Independent mobile-first prize draw price monitor for [thatprizeguy.co.uk](https
 - Saved watchlist in browser localStorage and drop indication when the app opens or refreshes (no background push/email notifications yet)
 - Historical chart once the monitor has captured multiple snapshots
 - JSON snapshot import for local review; imported files remain on the device
-- Netlify Scheduled Function, `/api/competitions` and site-wide Netlify Blobs for public snapshots
+- Scheduled Netlify collection, first-visit bootstrap, `/api/competitions`, and site-wide Netlify Blobs for public snapshots
+- Public feed health, explicit source failures, stale snapshot warnings, and a verified-only live label
+- Separate GitHub Actions source-access probe
 - Polite crawl policy: fetch robots.txt, do not bypass login/rate limits, fail closed on restrictions
 
 ## Run locally
 
-Use any static HTTP server pointed at `public/`. The Netlify build runs `npm run build` to copy the shared comparison logic into the published assets. Example from this folder: `python3 -m http.server 8080 --directory public`. Open `http://localhost:8080`. The Netlify API will be absent, so the interface uses labelled sample data. For Netlify local functions install dependencies (`npm install`) and run `npx netlify dev` with Netlify CLI if available.
+Use any static HTTP server pointed at `public/`. The Netlify build runs `npm run build` to copy the shared comparison logic into the published assets. Example from this folder: `python3 -m http.server 8080 --directory public`. Open `http://localhost:8080`. The Netlify API will be absent, so the dashboard reports that no verified live data is available. Example JSON can still be imported manually for testing. For Netlify local functions install dependencies (`npm install`) and run `npx netlify dev` with Netlify CLI if available.
 
 ## Deploy to Netlify
 
