@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d13">
+  <meta name="description" content="PrizePulse independently tracks publicly advertised UK competition ticket prices, sales progress and comparable prize value.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <title>PrizePulse - Price intelligence for prize draws</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand" aria-label="PrizePulse">
+        <span class="brand-mark"><span class="brand-radar"></span></span>
+        <span class="brand-name">PRIZE<span>PULSE</span><small>INDEPENDENT TRACKER</small></span>
+      </div>
+      <div class="nav-caption">WORKSPACE</div>
+      <nav class="sidebar-nav" id="sideNav">
+        <button class="nav-link active" data-screen="dashboard"><span class="nav-icon">▦</span> Overview <span class="nav-kbd">01</span></button>
+        <button class="nav-link" data-screen="drops"><span class="nav-icon">↘</span> Price drops <span class="nav-kbd">02</span></button>
+        <button class="nav-link" data-screen="value"><span class="nav-icon">◈</span> Best value <span class="nav-kbd">03</span></button>
+        <button class="nav-link" data-screen="watching"><span class="nav-icon">☆</span> My watchlist <span class="nav-counter" id="sidebarWatchCount">0</span></button>
+      </nav>
+      <div class="side-bottom">
+        <div class="side-info">
+          <span class="side-info-icon">◎</span>
+          <div><strong>Data, not hype.</strong><p>Follow the numbers. Never a promise of winning.</p></div>
+        </div>
+        <button class="nav-link nav-how" id="aboutButton"><span class="nav-icon">ⓘ</span> Methodology</button>
+        <div class="sidebar-disclaimer">18+ only · Independent · Not affiliated with That Prize Guy</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumb"><span>MONITOR</span><span class="crumb-sep">/</span><strong id="screenCrumb">Overview</strong></div>
+        <div class="top-actions">
+          <div class="data-status" id="dataStatus"><span class="status-dot"></span><span>Loading sources...</span></div>
+          <button class="icon-button" id="refreshButton" aria-label="Refresh data" title="Refresh data">↻</button>
+          <button class="icon-button watch-counter-top" id="topWatchButton" aria-label="My watchlist" title="My watchlist">☆<span id="watchCountTiny">0</span></button>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="notice sample-notice" id="sampleNotice" hidden>
+          <span class="notice-symbol">ⓘ</span>
+          <span><strong>Preview dataset</strong> — example competitions captured from public listings on 8 November 2026. These are not live prices. Automated collection starts only after deploying and validating the source monitor.</span>
+          <button id="dismissNotice" aria-label="Dismiss note">×</button>
+        </div>
+        <div class="notice warn-notice" id="monitorWarning" hidden><span>⚠</span><span id="monitorWarningText"></span></div>
+
+        <section class="hero" id="hero">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="eyebrow-line"></span> COMPETITION INTELLIGENCE <span class="eyebrow-no">// 001</span></div>
+            <h1>Know the price.<br><em>See the value.</em></h1>
+            <p>Track price reductions, watch ticket sales, and compare the maths behind prize draws. All in one place.</p>
+            <div class="hero-actions">
+              <button class="primary-button" id="exploreButton">Explore competitions <span>↗</span></button>
+              <button class="secondary-button" id="heroWatchButton">View watchlist <span>☆</span></button>
+            </div>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="orb orb-one"></div><div class="orb orb-two"></div>
+            <div class="pulse-grid"></div>
+            <div class="radar-ring r1"></div><div class="radar-ring r2"></div><div class="radar-ring r3"></div>
+            <div class="radar-glow"></div>
+            <div class="floating-tag tag-a"><i></i> PRICE MONITORING</div>
+            <div class="floating-tag tag-b">↑ 24/7 PRICE HISTORY</div>
+            <div class="hero-cross">+</div>
+          </div>
+        </section>
+
+        <section class="stats" aria-label="Statistics">
+          <div class="stat"><div class="stat-label"><span class="stat-square lime"></span> Competitions</div><div class="stat-number" id="statTotal">—</div><div class="stat-foot">In current dataset</div></div>
+          <div class="stat"><div class="stat-label"><span class="stat-square coral"></span> Advertised discounts</div><div class="stat-number" id="statDiscounts">—</div><div class="stat-foot">As labelled by the operator</div></div>
+          <div class="stat"><div class="stat-label"><span class="stat-square blue"></span> Value comparisons</div><div class="stat-number" id="statRanked">—</div><div class="stat-foot">With enough verified data</div></div>
+          <div class="stat"><div class="stat-label"><span class="stat-square purple"></span> Watching</div><div class="stat-number" id="statWatching">0</div><div class="stat-foot">Saved on this device</div></div>
+        </section>
+
+        <section class="main-section" id="competitions">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker" id="sectionKicker">THE RADAR / ALL LISTINGS</div>
+              <h2 id="sectionTitle">Competition radar <span class="count-bubble" id="shownCount">0</span></h2>
+              <p id="sectionSub">Publicly listed prize draws, organised for easier comparison.</p>
+            </div>
+            <div class="section-head-actions">
+              <span class="last-checked" id="lastChecked">Checking feed…</span>
+              <button class="outline-button" id="uploadButton">↑ Import snapshot</button>
+              <input type="file" id="snapshotInput" accept="application/json,.json" hidden>
+            </div>
+          </div>
+          <div class="filters">
+            <div class="search-field"><span>⌕</span><input type="search" id="searchInput" placeholder="Search prizes, cars, cash..." aria-label="Search competitions"><kbd>/</kbd></div>
+            <div class="filter-select-wrap"><label for="sortSelect">SORT BY</label><select id="sortSelect"><option value="drops">Biggest discount</option><option value="value">Best value (full cap)</option><option value="lowprice">Lowest ticket price</option><option value="sold">Most tickets sold</option><option value="title">Prize name A–Z</option></select></div>
+          </div>
+          <div class="filter-chips" id="categoryFilters" aria-label="Filter categories">
+            <button class="filter-chip active" data-category="All">All prizes</button>
+            <button class="filter-chip" data-category="Cash">Cash</button>
+            <button class="filter-chip" data-category="Cars">Cars</button>
+            <button class="filter-chip" data-category="Tech">Tech</button>
+            <button class="filter-chip" data-category="Experiences">Experiences</button>
+            <button class="filter-chip" data-category="Instant">Instant wins</button>
+          </div>
+          <div class="list-meta"><div><span class="glow-dot"></span> <span id="listDescription">Loading monitored competitions</span></div><div class="legend"><span class="legend-dot"></span> Figures are estimates, not winning odds</div></div>
+          <div class="prize-list" id="prizeList" aria-live="polite"><div class="loading-state"><span class="spinner"></span> Loading listings...</div></div>
+          <div class="list-footer"><span>Displayed prices can change between checks. Confirm everything on the source website.</span><span id="footCounter">—</span></div>
+        </section>
+
+        <section class="explainer-strip" id="explainer">
+          <div class="explainer-symbol">↗</div>
+          <div><strong>How we decide “best value”</strong><p>Where prize amount and maximum ticket allocation are known, we calculate an illustrative prize-value-to-ticket-cost ratio at full allocation. We exclude variable-prize and instant-win mechanics from simple comparisons.</p></div>
+          <button class="text-link" id="readMethodButton">Read methodology →</button>
+        </section>
+        <footer class="footer"><span>© 2026 PrizePulse · Independent informational tool</span><span>18+ · No sales, no ticket purchases, no guaranteed outcomes</span></footer>
+      </div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="mobile-nav-link active" data-screen="dashboard"><span>▦</span>Home</button>
+    <button class="mobile-nav-link" data-screen="drops"><span>↘</span>Drops</button>
+    <button class="mobile-nav-link" data-screen="value"><span>◈</span>Value</button>
+    <button class="mobile-nav-link" data-screen="watching"><span>☆</span>Watching</button>
+  </nav>
+
+  <div class="overlay" id="detailOverlay" hidden><div class="overlay-shade" data-close="detail"></div><aside class="drawer" id="detailDrawer" role="dialog" aria-modal="true" aria-label="Competition details"><button class="drawer-close" id="closeDetails" aria-label="Close details">×</button><div id="drawerContent"></div></aside></div>
+  <div class="overlay" id="methodOverlay" hidden><div class="overlay-shade" data-close="method"></div><aside class="drawer method-drawer" role="dialog" aria-modal="true" aria-label="Methodology"><button class="drawer-close" id="closeMethod" aria-label="Close methodology">×</button><div class="drawer-inner"><span class="detail-eyebrow">THE MATH, EXPLAINED</span><h2>Transparent by design.</h2><p class="drawer-lead">PrizePulse is an independent information tool. We do not operate draws or sell entries.</p><div class="method-step"><span>01</span><div><h3>Actual price changes</h3><p>We record published ticket prices at each successful check. A tracked drop requires two recorded prices. A crossed-out “previously” price shown by a promoter is labelled separately as an advertised discount.</p></div></div><div class="method-step"><span>02</span><div><h3>Full-allocation comparison</h3><p>Illustrative gross value per ticket = published cash prize or cash alternative ÷ maximum eligible tickets. We compare that amount with one entry's advertised price. This is not a prediction of final results or a guaranteed return.</p></div></div><div class="method-step"><span>03</span><div><h3>What we don't rank</h3><p>Instant wins, multiple-winner draws, variable prize pools, or draws without a verified maximum entry count are marked “Insufficient data”. Bulk discounts, cashback, fees, free-entry rules and changing ticket sales can alter real outcomes.</p></div></div><div class="method-step"><span>04</span><div><h3>Watchlist and alerts</h3><p>Your watchlist is saved on this device. It highlights a lower price the next time you open or refresh the app. Background push notifications and email alerts are not included in this first version.</p></div></div><div class="method-note"><strong>Source and limits</strong><p>Prices and ticket counts are public information from <a href="https://thatprizeguy.co.uk" target="_blank" rel="noopener noreferrer">thatprizeguy.co.uk</a>. A source layout change or access restriction can stop monitoring. Always confirm the current terms and availability on the promoter's website. Participation is for adults aged 18+ only.</p></div></div></aside></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/assets/app.mjs"></script>
+</body>
+</html>
