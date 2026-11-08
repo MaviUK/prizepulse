@@ -13,9 +13,10 @@ export default async function competitions(req,context) {
     const store=getStore({name:cacheName,consistency:'strong'});
     const [latest,status]=await Promise.all([store.get('latest',{type:'json'}),store.get('sync-status',{type:'json'})]);
     if(!latest || !Array.isArray(latest.items) || latest.items.length<2) {
+      const sourceBlocked=Boolean(status?.blocked)||(status?.status==='error'&&/source website refused or limited/i.test(status.reason||''));
       // The first browser visit may bootstrap once per slot, always obeying robots.txt.
       let started=false;
-      if(typeof context?.waitUntil==='function') {
+      if(!sourceBlocked && typeof context?.waitUntil==='function') {
         try {
           const slot=currentSlot(Date.now());
           const claim=await store.setJSON('bootstrap/'+slot,{at:new Date().toISOString()},{onlyIfNew:true});
@@ -25,7 +26,7 @@ export default async function competitions(req,context) {
           }
         } catch(error) { console.warn('PrizePulse bootstrap could not start',String(error)); }
       }
-      return Response.json({status:'uninitialised',checkedAt:null,items:[],count:0,
+      return Response.json({status:sourceBlocked?'blocked':'uninitialised',checkedAt:null,items:[],count:0,
         bootstrapStarted:started,lastAttemptAt:status?.at||null,
         monitorWarning:status?.status==='error'?status.reason:'Waiting for the first verified public-source check.'},{headers});
     }

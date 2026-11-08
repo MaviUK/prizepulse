@@ -38,7 +38,7 @@ function renderStats(){
  updateWatchStats();
  $('lastChecked').textContent=checkedAt ? `Last checked: ${fmtDate(checkedAt)}` : 'No recent check';
  const status=$('dataStatus');status.className='data-status '+(sourceMode==='live'?'live':'demo');
- const name=sourceMode==='live'?'LIVE PUBLIC SNAPSHOT':sourceMode==='stale'?'VERIFIED DATA - STALE':sourceMode==='import'?'LOCAL IMPORT':sourceMode==='loading'?'CHECKING SOURCE':sourceMode==='pending'?'AWAITING LIVE CHECK':'MONITOR UNAVAILABLE';
+ const name=sourceMode==='live'?'LIVE PUBLIC SNAPSHOT':sourceMode==='stale'?'VERIFIED DATA - STALE':sourceMode==='import'?'LOCAL IMPORT':sourceMode==='loading'?'CHECKING SOURCE':sourceMode==='pending'?'AWAITING LIVE CHECK':sourceMode==='blocked'?'SOURCE ACCESS BLOCKED':'MONITOR UNAVAILABLE';
  status.querySelector('span:last-child').textContent=name;
  $('sampleNotice').hidden=true;
 }
@@ -82,7 +82,7 @@ function render(){renderStats();
  document.querySelectorAll('[data-screen]').forEach(btn=>btn.classList.toggle('active',btn.dataset.screen===screen));
  document.querySelectorAll('[data-category]').forEach(btn=>btn.classList.toggle('active',btn.dataset.category===category));
  const list=getVisibleItems();$('shownCount').textContent=list.length;$('footCounter').textContent=`${list.length} / ${items.length} competitions`;
- $('listDescription').textContent=(sourceMode==='live'?'Verified public feed':sourceMode==='stale'?'Last verified feed (stale)':sourceMode==='import'?'Local file':'No verified live snapshot')+' · '+list.length+' matching listings';
+ $('listDescription').textContent=(sourceMode==='live'?'Verified public feed':sourceMode==='stale'?'Last verified feed (stale)':sourceMode==='import'?'Local file':sourceMode==='blocked'?'Source access blocked':'No verified live snapshot')+' · '+list.length+' matching listings';
  $('prizeList').innerHTML=list.length?list.map(cardMarkup).join(''):`<div class="empty-state"><strong>${screen==='watching'?'Your watchlist is empty':screen==='value'?'No comparable prizes in this selection':'No competitions found'}</strong><p>${screen==='watching'?'Tap ☆ on a prize to start watching its price.':screen==='value'?'Cash prize and maximum tickets must both be known. Try another category.':'Try a different search or filter.'}</p></div>`;
 }
 function setScreen(next){if(!LABELS[next])return;screen=next;category='All';search='';$('searchInput').value='';if(next==='value'){$('sortSelect').value='value';sort='value';}else if(next==='drops'){$('sortSelect').value='drops';sort='drops';}render();$('competitions').scrollIntoView({behavior:'smooth',block:'start'});}
@@ -126,8 +126,8 @@ async function refreshData(showToast=false){
     $('monitorWarning').hidden=!data.monitorWarning;
     if(data.monitorWarning)$('monitorWarningText').textContent=data.monitorWarning;
     if(showToast)toast('Loaded '+items.length+' verified competitions.');
-  }else if(data.status==='uninitialised'){
-    items=[];checkedAt=null;sourceMode='pending';
+  }else if(data.status==='uninitialised'||data.status==='blocked'){
+    items=[];checkedAt=null;sourceMode=data.status==='blocked'?'blocked':'pending';
     $('monitorWarning').hidden=false;
     $('monitorWarningText').textContent=data.monitorWarning||'Awaiting the first verified source check.';
     if(showToast)toast(data.bootstrapStarted?'Starting first source check.':'No verified prices available yet.');

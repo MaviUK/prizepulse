@@ -27,3 +27,9 @@ test('source error descriptions are suitable for public display',()=>{
  assert.match(safeMonitorError(new Error('Source HTTP 429 at /')),/refused|limited/i);
  assert.match(safeMonitorError(new Error('too few valid competitions')),/structure/i);
 });
+
+test('once blocked, a scheduled check does not retry without explicit approval',async()=>{
+ const store=memoryStore({'sync-status':{status:'error',at:'2026-11-08T22:41:00Z',reason:'The source website refused or limited the request.',blocked:true}});
+ const result=await runMonitor(store,{now:'2026-11-08T22:42:00Z',fetcher:async()=>{throw new Error('Should never fetch blocked source');}});
+ assert.equal(result.blocked,true);assert.equal(result.paused,true);
+});
