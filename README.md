@@ -74,3 +74,4 @@ For a conventional single-winner cash prize, illustrative full-allocation prize 
 - Verify site source permission / rate limits before enabling a live background collector.
 
 © 2026 PrizePulse. Adults 18+. Play responsibly. This is not an official service.
+Deployment note: the opt-in browser connector uses a site-specific private key stored in Netlify Functions environment variables. Changing that key requires a fresh production deploy.
