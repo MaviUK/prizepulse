@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateBrowserSubmission,mergeBrowserSnapshot,pickFeed} from '../lib/browser-feed.mjs';
+const at='2026-11-08T22:50:00.000Z';
+const first={title:'£100,000 For 20p',url:'https://thatprizeguy.co.uk/competitions/one',category:'Cash',pricePence:17,advertisedPreviousPence:20,soldPercent:27};
+const second={title:'Norwegian Fjords Cruise',url:'https://thatprizeguy.co.uk/competitions/two',category:'Experiences',pricePence:99,soldPercent:38};
+const payload=(items=[first,second])=>({items,pageUrl:'https://thatprizeguy.co.uk/categories/all',pageLoadedAt:at,capturedAt:at});
+test('captures only recent, public, valid competition figures',()=>{const res=validateBrowserSubmission(payload(),Date.parse(at)); assert.equal(res.length,2);assert.equal(res[0].pricePence,17);assert.equal(res[0].maxEntries,null);});
+test('rejects old or unofficial pages',()=>{assert.throws(()=>validateBrowserSubmission(payload(),Date.parse(at)+130000),/too old/);assert.throws(()=>validateBrowserSubmission({...payload(),pageUrl:'https://example.org/'},Date.parse(at)),/Only public/);});
+test('rejects forged history and ticket caps',()=>{const r=validateBrowserSubmission(payload([{...first,maxEntries:1,history:[{at,pricePence:0}]},second]),Date.parse(at));assert.equal(r[0].maxEntries,null);assert.deepEqual(r[0].history,[]);});
+test('records a real price movement without overwriting prior history',()=>{const original=validateBrowserSubmission(payload(),Date.parse(at));const snapshot=mergeBrowserSnapshot(original,null,at);const next=mergeBrowserSnapshot([{...original[0],pricePence:13},original[1]],snapshot,'2026-11-08T22:51:00.000Z');assert.equal(next.items[0].priceEvents[0].beforePence,17);assert.equal(next.items[0].priceEvents[0].afterPence,13);assert.equal(next.items[0].history.length,2);});
+test('picks the freshest feed even when the other is blocked',()=>{const a={checkedAt:at,items:[first,second]},b={checkedAt:'2026-11-08T22:45:00.000Z',items:[first,second]};assert.equal(pickFeed(a,b),a);});
